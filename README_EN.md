@@ -1,4 +1,4 @@
-**中文** | [English](https://github.com/Bunnui/Fabric-Bedrock-Miner/blob/main/README_EN.md)
+**English** | [中文](./README.md)
 
 # Fabric-Bedrock-Miner
 A Fabric client mod to "mine" bedrock!
@@ -6,23 +6,28 @@ A Fabric client mod to "mine" bedrock!
 # illustrate
 This project fork modified from [LXYan2333/Fabric-Bedrock-Miner](https://github.com/LXYan2333/Fabric-Bedrock-Miner) <br>
 
-## Default list of squares list
+## Default block list list
 
-#### White List of squares (destruct supported)
+#### Block whitelist (break supported)
 - Bedrock
 - End Portal
-- End Portal - Frame
+- End Portal Frame
 - End gateway
 
-#### Server block blacklist list (does not support corruption, cannot be changed by instructions, built-in)
+#### Block blacklist (Break is not supported)
+- None
+
+#### Server block blacklist (Break is not supported, cannot be changed by command, built-in filter)
 - Command Block
 - Chain Command Block
-- Repeating Command Block
+- Repeating Command Block~~~~
 - Structure Void
 - Structure Block
-- 
-#### Default filtering
+- Jigsaw Block
+
+#### Command blocks to add filter
 - Air
+- Replaceable blocks
 
 ### Command description
 - `/bedrockMiner` enable/disable
@@ -32,7 +37,7 @@ This project fork modified from [LXYan2333/Fabric-Bedrock-Miner](https://github.
 - `/bedrockMiner block blacklist remove <block>` remove blacklist block list
 - `/bedrockMiner debug true` enables debug mode
 - `/bedrockMiner debug false` turn off debug mode
-~~~~
+
 # Showcase
 https://www.youtube.com/watch?v=b8Y86yxjr_Y  
 https://www.bilibili.com/video/BV1Fv411P7Vc
