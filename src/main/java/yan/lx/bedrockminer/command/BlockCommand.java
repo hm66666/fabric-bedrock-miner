@@ -6,9 +6,9 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 import yan.lx.bedrockminer.command.argument.BlockArgument;
 import yan.lx.bedrockminer.config.Config;
 import yan.lx.bedrockminer.utils.BlockUtils;
@@ -50,9 +50,9 @@ public class BlockCommand extends BaseCommand {
     }
 
     private boolean isFilterBlock(Identifier blockId) {
-        var block = Registries.BLOCK.get(blockId);
+        var block = Registry.BLOCK.get(blockId);
         // 过滤空气和可替换方块
-        return block.getDefaultState().isAir() || block.getDefaultState().isReplaceable();
+        return block.getDefaultState().isAir() || block.getDefaultState().getMaterial().isReplaceable();
     }
 
     private Boolean showWhitelist(Identifier blockId) {
