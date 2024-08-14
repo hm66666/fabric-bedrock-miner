@@ -26,16 +26,17 @@ import java.util.Objects;
 
 
 public class InventoryManagerUtils {
+    public static void autoSwitchToPiston() {
+        autoSwitch(Blocks.PISTON.getDefaultState());
+    }
 
-    public static void autoSwitch() {
+    public static void autoSwitch(BlockState blockState) {
         var player = MinecraftClient.getInstance().player;
-        if (player == null) {
-            return;
-        }
+        if (player == null) return;
         var playerInventory = player.getInventory();
         // 选取最优工具
-        float lastTime = -1;
-        int lastSlot = -1;
+        var lastTime = -1F;
+        var lastSlot = -1;
         for (int i = 0; i < playerInventory.size(); i++) {
             var itemStack = playerInventory.getStack(i);
             // 检查耐久是否发起警告(剩余耐久<=检查值)
@@ -43,8 +44,7 @@ public class InventoryManagerUtils {
                 continue;
             }
             // 选取最快工具
-            float blockBreakingTotalTime = InventoryManagerUtils.getBlockBreakingTotalTime(Blocks.PISTON.getDefaultState(), itemStack);
-
+            var blockBreakingTotalTime = InventoryManagerUtils.getBlockBreakingTotalTime(blockState, itemStack);
             if (blockBreakingTotalTime != -1) {
                 if (lastTime == -1 || lastTime > blockBreakingTotalTime) {
                     lastTime = blockBreakingTotalTime;
@@ -66,7 +66,6 @@ public class InventoryManagerUtils {
             return;
         }
         PlayerInventory playerInventory = player.getInventory();
-        // 背包中没有指定的物品
         if (PlayerInventory.isValidHotbarIndex(slot)) {
             playerInventory.selectedSlot = slot;
         } else {
@@ -153,10 +152,11 @@ public class InventoryManagerUtils {
      * @return true为可以瞬间破坏
      */
     public static boolean isInstantBreakingBlock(BlockState blockState, ItemStack itemStack) {
-        float hardness = blockState.getBlock().getHardness();       // 当前方块硬度
+        var hardness = blockState.getBlock().getHardness();       // 当前方块硬度
         if (hardness < 0) return false;                             // 无硬度(如基岩无法破坏)
-        float speed = getBlockBreakingSpeed(blockState, itemStack); // 当前破坏速度
-        return speed > (hardness * 30);
+        var speed = getBlockBreakingSpeed(blockState, itemStack); // 当前破坏速度
+        var j = hardness * 30;
+        return speed > (j - j * 0.3);
     }
 
     /**
@@ -180,37 +180,29 @@ public class InventoryManagerUtils {
      * @param itemStack  使用工具/物品破坏方块
      * @return 当前物品破坏该方块所需的时间（单位为 tick）
      */
-    private static float getBlockBreakingSpeed(BlockState blockState, ItemStack itemStack) {
-        var client = MinecraftClient.getInstance();
-        var player = client.player;
+    public static float getBlockBreakingSpeed(BlockState blockState, ItemStack itemStack) {
+        var player = MinecraftClient.getInstance().player;
         if (player == null) return 0;
-
-        var toolSpeed = itemStack.getMiningSpeedMultiplier(blockState);  // 当前物品的破坏系数速度
-        // Debug.info("[1]" + toolSpeed);
-
+        var speedMultiplier = itemStack.getMiningSpeedMultiplier(blockState);  // 当前物品的破坏系数速度(不合适物品为1)
         // 根据工具的"效率"附魔增加破坏速度
-        if (toolSpeed > 1.0F) {
-            // 获取itemStack的附魔集合
-            for (var enchantment : itemStack.getEnchantments().getEnchantments()) {
-                var enchantmentKey = enchantment.getKey();
-                if (enchantmentKey.isPresent()) {
+        if (speedMultiplier > 1.0F) {
+            if (!itemStack.isEmpty()) {
+                // 获取ItemStack的附魔注册列表
+                for (var enchantment : itemStack.getEnchantments().getEnchantments()) {
+                    var enchantmentRegistryKey = enchantment.getKey();
+                    if (enchantmentRegistryKey.isEmpty()) continue;
                     // 获取效率附魔等级
-                    if (enchantmentKey.get() == Enchantments.EFFICIENCY) {
-                        int toolLevel = EnchantmentHelper.getLevel(enchantment, itemStack);
-                        if (toolLevel > 0 && !itemStack.isEmpty()) {
-                            toolSpeed += (float) (toolLevel * toolLevel + 1);
-                        }
+                    if (enchantmentRegistryKey.get() == Enchantments.EFFICIENCY) {
+                        int efficiencyLevel = EnchantmentHelper.getLevel(enchantment, itemStack);
+                        speedMultiplier += (float) (efficiencyLevel * efficiencyLevel + 1);
                     }
                 }
             }
-            // Debug.info("[2]" + toolSpeed);
         }
-
         // 根据玩家"急迫"状态效果增加破坏速度
         if (StatusEffectUtil.hasHaste(player)) {
-            toolSpeed *= 1.0F + (float) (StatusEffectUtil.getHasteAmplifier(player) + 1) * 0.2F;
+            speedMultiplier *= 1.0F + (float) (StatusEffectUtil.getHasteAmplifier(player) + 1) * 0.2F;
         }
-
         // 根据玩家"挖掘疲劳"状态效果减缓破坏速度
         if (player.hasStatusEffect(StatusEffects.MINING_FATIGUE)) {
             float g = switch (Objects.requireNonNull(player.getStatusEffect(StatusEffects.MINING_FATIGUE)).getAmplifier()) {
@@ -219,23 +211,20 @@ public class InventoryManagerUtils {
                 case 2 -> 0.0027F;
                 default -> 8.1E-4F;
             };
-            toolSpeed *= g;
+            speedMultiplier *= g;
         }
-
-
         // 如果玩家在水中并且没有"水下速掘"附魔，则减缓破坏速度
-        toolSpeed *= (float) player.getAttributeValue(EntityAttributes.PLAYER_BLOCK_BREAK_SPEED);
+        speedMultiplier *= (float) player.getAttributeValue(EntityAttributes.PLAYER_BLOCK_BREAK_SPEED);
         if (player.isSubmergedIn(FluidTags.WATER)) {
-            toolSpeed *= (float) Objects.requireNonNull(player.getAttributeInstance(EntityAttributes.PLAYER_SUBMERGED_MINING_SPEED)).getValue();
+            speedMultiplier *= (float) Objects.requireNonNull(player.getAttributeInstance(EntityAttributes.PLAYER_SUBMERGED_MINING_SPEED)).getValue();
         }
-
         // 如果玩家不在地面上，则减缓破坏速度
         if (!player.isOnGround()) {
-            toolSpeed /= 5.0F;
+            speedMultiplier /= 5.0F;
         }
-        // Debug.info("[3]" + toolSpeed);
-        return toolSpeed;
+        return speedMultiplier;
     }
+
 
     /*** 获取背包物品数量 ***/
     public static int getInventoryItemCount(Item item) {

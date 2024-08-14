@@ -367,9 +367,9 @@ public class TaskHandler {
         var player = MinecraftClient.getInstance().player;
         if (!recycledQueue.isEmpty() && player != null) {
             var blockPos = recycledQueue.peek();
-            BlockBreakerUtils.simpleBreakBlock(blockPos);
+            BlockBreakerUtils2.updateBlockBreakingProgress(blockPos);
             if (world.getBlockState(blockPos).calcBlockBreakingDelta(player, world, blockPos) < 1F) {
-                InventoryManagerUtils.autoSwitch();
+                InventoryManagerUtils.autoSwitchToPiston();
                 return;
             }
             if (world.getBlockState(blockPos).isReplaceable()) {
@@ -405,8 +405,8 @@ public class TaskHandler {
             executeModify = true;
             return;
         } else {
-            if (world.getBlockState(piston.pos).calcBlockBreakingDelta(player, world, piston.pos) < 1F) {
-                InventoryManagerUtils.autoSwitch();
+            if (world.getBlockState(piston.pos).calcBlockBreakingDelta(player, world, piston.pos) < BlockBreakerUtils2.calcBlockBreakingDeltaMax) {
+                InventoryManagerUtils.autoSwitchToPiston();
                 setWait(TaskState.EXECUTE, 3);
                 return;
             }
@@ -414,13 +414,13 @@ public class TaskHandler {
             BlockPos[] nearbyRedstoneTorch = TaskSeekSchemeTools.findPistonNearbyRedstoneTorch(piston.pos, world);
             for (BlockPos pos : nearbyRedstoneTorch) {
                 if (world.getBlockState(pos).getBlock() instanceof RedstoneTorchBlock) {
-                    BlockBreakerUtils.simpleBreakBlock(pos);
+                    BlockBreakerUtils2.updateBlockBreakingProgress(pos);
                 }
             }
             if (world.getBlockState(redstoneTorch.pos).getBlock() instanceof RedstoneTorchBlock) {
-                BlockBreakerUtils.simpleBreakBlock(redstoneTorch.pos);
+                BlockBreakerUtils2.updateBlockBreakingProgress(redstoneTorch.pos);
             }
-            BlockBreakerUtils.simpleBreakBlock(piston.pos);
+            BlockBreakerUtils2.updateBlockBreakingProgress(piston.pos);
             BlockPlacerUtils.placement(piston.pos, direction.getOpposite(), Items.PISTON);
             addRecycled(piston.pos);
             if (executeModify) {

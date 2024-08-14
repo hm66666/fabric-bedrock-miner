@@ -117,8 +117,6 @@ public class TaskManager {
                 }
             }
         }
-
-
     }
 
     public static boolean checkIsAllowBlock(Block block) {

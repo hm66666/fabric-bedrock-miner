@@ -24,7 +24,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import yan.lx.bedrockminer.command.argument.BlockPosArgumentType;
 import yan.lx.bedrockminer.utils.BlockBreakerUtils;
+import yan.lx.bedrockminer.utils.BlockBreakerUtils2;
 import yan.lx.bedrockminer.utils.BlockPlacerUtils;
+import yan.lx.bedrockminer.utils.InventoryManagerUtils;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -56,7 +58,11 @@ public class Test {
             var blockPos = blockHitResult.getBlockPos();
             var blockState = world.getBlockState(blockPos);
             var block = blockState.getBlock();
-            BlockBreakerUtils.simpleBreakBlock(blockPos);
+
+            // InventoryManagerUtils.autoSwitch(blockState);
+            InventoryManagerUtils.switchToSlot(1);
+            BlockBreakerUtils2.updateBlockBreakingProgress(blockPos, Direction.UP);
+            BlockPlacerUtils.placement(blockPos, Direction.DOWN, Items.PISTON);
             // Debug.info(world.getWorldBorder().getMaxRadius());
         }
 
